@@ -1,0 +1,17 @@
+[project]
+name = "llm-finetune-api"
+version = "0.1.0"
+description = "Serving API for fine-tuned LLM models"
+authors = [{ name = "Alex Mikheev" }]
+requires-python = ">=3.13"
+dependencies = [
+    "llm-finetune",
+    "fastapi>=0.115",
+]
+
+[tool.uv.build-backend]
+module-root = ""
+
+[build-system]
+requires = ["uv_build>=0.9.7,<0.10.0"]
+build-backend = "uv_build"

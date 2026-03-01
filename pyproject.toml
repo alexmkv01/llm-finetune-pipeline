@@ -1,0 +1,120 @@
+[project]
+name = "llm-finetune-pipeline"
+version = "0.1.0"
+description = "End-to-end production pipeline to fine-tune small language models"
+authors = [{ name = "Alex Mikheev" }]
+readme = "README.md"
+requires-python = ">=3.13"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.7.0",
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.8.0",
+    "rumdl>=0.1.20",
+    "types-pyyaml>=6",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["lib", "train", "api"]
+
+[tool.uv.sources]
+llm-finetune = { workspace = true }
+llm-finetune-train = { workspace = true }
+llm-finetune-api = { workspace = true }
+
+[tool.ruff]
+target-version = "py313"
+src = ["lib/", "api/", "train/", "tests"]
+extend-exclude = [".venv", ".direnv", ".git", "__pycache__", "build", "dist"]
+
+[tool.ruff.lint]
+select = [
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "COM819", # trailing-comma (missing)
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "G",      # flake8-logging-format
+    "I",      # isort
+    "LOG",    # flake8-logging
+    "PT",     # flake8-pytest-style
+    "Q",      # flake8-quotes
+    "RUF",    # ruff-specific
+    "SIM",    # flake8-simplify
+    "UP",     # pyupgrade
+    "W",      # pycodestyle warnings
+]
+ignore = ["E501"]
+unfixable = ["B"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["llm_finetune", "llm_finetune_train", "llm_finetune_api"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.13"
+show_error_codes = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_calls = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_equality = true
+disallow_any_generics = true
+disallow_any_unimported = true
+plugins = ["pydantic.mypy"]
+packages = [
+    "llm_finetune",
+    "llm_finetune_train",
+    "llm_finetune_api",
+    "tests",
+]
+exclude = [
+    "^\\.venv/",
+    "^\\.git/",
+    "^\\.dvc/",
+    "^artifacts/",
+]
+
+[[tool.mypy.overrides]]
+module = [
+    "transformers.*",
+    "datasets.*",
+    "peft.*",
+    "trl.*",
+    "unsloth.*",
+    "vllm.*",
+    "accelerate.*",
+    "bitsandbytes.*",
+]
+ignore_missing_imports = true
+follow_imports = "skip"
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--cov --strict-markers"
+testpaths = ["tests"]
+
+[tool.coverage.run]
+branch = true
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+

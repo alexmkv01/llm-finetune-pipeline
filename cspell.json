@@ -1,0 +1,38 @@
+{
+  "version": "0.2",
+  "language": "en-GB",
+  "files": [
+    "**/*.py",
+    "**/*.md",
+    "**/*.md.j2",
+    "**/*.yaml",
+    "**/*.yml"
+  ],
+  "ignorePaths": [
+    "node_modules",
+    ".venv",
+    "*.lock",
+    ".dvc",
+    ".git",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".pytest_cache",
+    "__pycache__"
+  ],
+  "words": [
+    "finetune",
+    "huggingface",
+    "jinja",
+    "lora",
+    "peft",
+    "pydantic",
+    "pytorch",
+    "qlora",
+    "rumdl",
+    "smollm",
+    "sft",
+    "trl",
+    "unsloth",
+    "vllm"
+  ]
+}
