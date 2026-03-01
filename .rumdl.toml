@@ -1,0 +1,17 @@
+# Global configuration
+[global]
+include = ["**/*.md.j2"]
+exclude = [".git", ".venv", "dist", "build", "node_modules"]
+
+# Only disable rules that conflict with Jinja2 syntax or core prompt structure.
+disable = [
+    "MD013", # Line length (prompts need unbroken sentences)
+    "MD022", # Heading spacing (Jinja blocks break detection)
+    "MD024", # Duplicate headings (few-shot examples)
+    "MD032", # List spacing (Jinja blocks interfere)
+    "MD033", # Inline HTML (LLM tags like <context>)
+    "MD034", # Bare URLs (variables expand to links)
+    "MD037", # Spaces inside emphasis ({{ variable }} syntax)
+    "MD041", # First line H1 (prompts start with 'You are...')
+    "MD058", # Blank line after table (Jinja loop blocks after table headers confuse the parser)
+]

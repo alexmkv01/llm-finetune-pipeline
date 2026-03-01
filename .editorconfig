@@ -1,0 +1,26 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.py]
+indent_style = space
+indent_size = 4
+
+[*.{yaml,yml,json,toml}]
+indent_style = space
+indent_size = 2
+
+[dvc.lock]
+indent_style = space
+indent_size = 2
+quote_type = single
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.md.j2]
+trim_trailing_whitespace = false

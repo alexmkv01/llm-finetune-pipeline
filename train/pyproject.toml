@@ -1,0 +1,24 @@
+[project]
+name = "llm-finetune-train"
+version = "0.1.0"
+description = "DVC training pipeline for LLM fine-tuning"
+authors = [{ name = "Alex Mikheev" }]
+requires-python = ">=3.13"
+dependencies = [
+    "llm-finetune",
+    "dvc[s3]>=3.50.0",
+    "jinja2>=3.1.0",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+llm-finetune-train = "llm_finetune_train.__main__:main"
+
+[tool.uv.build-backend]
+module-root = ""
+
+[build-system]
+requires = ["uv_build>=0.9.7,<0.10.0"]
+build-backend = "uv_build"
