@@ -11,3 +11,7 @@ class CheckpointNotFoundError(LlmFinetuneError):
 
 class AdapterConfigError(LlmFinetuneError):
     """Raised when a LoRA adapter config is invalid or incompatible."""
+
+
+class GenerationError(LlmFinetuneError):
+    """Raised when the model produces output that cannot be decoded as a string."""

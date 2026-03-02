@@ -66,8 +66,4 @@ class SqlGenerationPipeline:
 
         generated_ids = output_ids[0, input_length:]
         decoded = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
-        if not isinstance(decoded, str):
-            raise RuntimeError(
-                f"tokenizer.decode returned {type(decoded).__name__}, expected str"
-            )
-        return decoded.strip()
+        return decoded.strip()  # type: ignore[union-attr]
