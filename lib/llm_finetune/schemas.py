@@ -20,10 +20,34 @@ class GenerationConfig(BaseModel):
     repetition_penalty: float = 1.1
     do_sample: bool = True
 
+    @field_validator("max_new_tokens")
+    @classmethod
+    def max_new_tokens_must_be_positive(cls, v: int) -> int:
+        """Must generate at least one token."""
+        if v <= 0:
+            raise ValueError("max_new_tokens must be > 0")
+        return v
+
     @field_validator("temperature")
     @classmethod
     def temperature_must_be_non_negative(cls, v: float) -> float:
         """Temperature must be >= 0."""
         if v < 0:
             raise ValueError("temperature must be >= 0")
+        return v
+
+    @field_validator("top_p")
+    @classmethod
+    def top_p_must_be_in_unit_interval(cls, v: float) -> float:
+        """Nucleus sampling cutoff must be in (0, 1]."""
+        if v <= 0 or v > 1:
+            raise ValueError("top_p must be in (0, 1]")
+        return v
+
+    @field_validator("repetition_penalty")
+    @classmethod
+    def repetition_penalty_must_be_positive(cls, v: float) -> float:
+        """Repetition penalty must be > 0."""
+        if v <= 0:
+            raise ValueError("repetition_penalty must be > 0")
         return v

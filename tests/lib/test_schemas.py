@@ -41,6 +41,34 @@ class TestGenerationConfigValidation:
         config = GenerationConfig(temperature=0.0)
         assert config.temperature == 0.0
 
+    def test_zero_max_new_tokens_raises(self) -> None:
+        with pytest.raises(ValidationError, match="max_new_tokens must be > 0"):
+            GenerationConfig(max_new_tokens=0)
+
+    def test_negative_max_new_tokens_raises(self) -> None:
+        with pytest.raises(ValidationError, match="max_new_tokens must be > 0"):
+            GenerationConfig(max_new_tokens=-10)
+
+    def test_zero_top_p_raises(self) -> None:
+        with pytest.raises(ValidationError, match=r"top_p must be in \(0, 1\]"):
+            GenerationConfig(top_p=0.0)
+
+    def test_top_p_above_one_raises(self) -> None:
+        with pytest.raises(ValidationError, match=r"top_p must be in \(0, 1\]"):
+            GenerationConfig(top_p=1.01)
+
+    def test_top_p_one_allowed(self) -> None:
+        config = GenerationConfig(top_p=1.0)
+        assert config.top_p == 1.0
+
+    def test_zero_repetition_penalty_raises(self) -> None:
+        with pytest.raises(ValidationError, match="repetition_penalty must be > 0"):
+            GenerationConfig(repetition_penalty=0.0)
+
+    def test_negative_repetition_penalty_raises(self) -> None:
+        with pytest.raises(ValidationError, match="repetition_penalty must be > 0"):
+            GenerationConfig(repetition_penalty=-1.0)
+
     def test_override_all_fields(self) -> None:
         config = GenerationConfig(
             max_new_tokens=512,

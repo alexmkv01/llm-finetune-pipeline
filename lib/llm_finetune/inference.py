@@ -1,64 +1,68 @@
 """Text generation inference using a fine-tuned causal language model."""
 
 import logging
+from pathlib import Path
 
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
-from llm_finetune.exceptions import GenerationError
+from llm_finetune.model import load_model
 from llm_finetune.schemas import GenerationConfig
 
 logger = logging.getLogger(__name__)
 
 
-def generate_sql(
-    model: PreTrainedModel,
-    tokenizer: PreTrainedTokenizerBase,
-    prompt: str,
-    config: GenerationConfig,
-) -> str:
-    """
-    Generate SQL from an already-formatted prompt string.
+class SqlGenerationPipeline:
+    """Pipeline wrapping a causal LM for natural-language-to-SQL generation.
 
-    The caller is responsible for prompt formatting. This function handles
-    tokenisation, generation, and decoding only.
+    Loads a model checkpoint (full or LoRA) and exposes a ``__call__``
+    interface for generating SQL from formatted prompt strings.
 
     Args:
-        model: The loaded causal language model.
-        tokenizer: The tokenizer matching the model.
-        prompt: The fully formatted input prompt.
+        checkpoint_dir: Path to the model checkpoint directory.
         config: Generation parameters.
-
-    Returns:
-        The generated SQL string (without the input prompt).
-
-    Raises:
-        GenerationError: If tokenisation or generation fails.
     """
-    try:
-        inputs = tokenizer(prompt, return_tensors="pt")
-        input_ids = inputs["input_ids"].to(model.device)
-        attention_mask = inputs["attention_mask"].to(model.device)
+
+    def __init__(
+        self,
+        checkpoint_dir: Path,
+        config: GenerationConfig,
+    ) -> None:
+        self.config = config
+        self.model: PreTrainedModel
+        self.tokenizer: PreTrainedTokenizerBase
+        self.model, self.tokenizer = load_model(checkpoint_dir)
+        logger.info("SqlGenerationPipeline initialised from %s", checkpoint_dir)
+
+    def __call__(self, prompt: str) -> str:
+        """Generate SQL from an already-formatted prompt string.
+
+        The caller is responsible for prompt formatting. This method
+        handles tokenisation, generation, and decoding only.
+
+        Args:
+            prompt: The fully formatted input prompt.
+
+        Returns:
+            The generated SQL string (without the input prompt).
+        """
+        inputs = self.tokenizer(prompt, return_tensors="pt")
+        input_ids = inputs["input_ids"].to(self.model.device)
+        attention_mask = inputs["attention_mask"].to(self.model.device)
         input_length = input_ids.size(1)
 
         with torch.no_grad():
-            output_ids = model.generate(  # type: ignore[operator]
+            output_ids = self.model.generate(  # type: ignore[operator]
                 input_ids=input_ids,
                 attention_mask=attention_mask,
-                max_new_tokens=config.max_new_tokens,
-                temperature=config.temperature,
-                top_p=config.top_p,
-                repetition_penalty=config.repetition_penalty,
-                do_sample=config.do_sample,
+                max_new_tokens=self.config.max_new_tokens,
+                temperature=self.config.temperature,
+                top_p=self.config.top_p,
+                repetition_penalty=self.config.repetition_penalty,
+                do_sample=self.config.do_sample,
             )
 
         generated_ids = output_ids[0, input_length:]
-        decoded = tokenizer.decode(generated_ids, skip_special_tokens=True)
-        if not isinstance(decoded, str):
-            raise GenerationError("expected single string from decode, got list")
+        decoded = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
+        assert isinstance(decoded, str), "expected single string from decode"
         return decoded.strip()
-
-    except GenerationError:
-        raise
-    except Exception as e:
-        raise GenerationError(f"generation failed: {e}") from e
