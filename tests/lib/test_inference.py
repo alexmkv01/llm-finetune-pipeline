@@ -3,6 +3,9 @@
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
+
+from llm_finetune.exceptions import CheckpointNotFoundError
 from llm_finetune.inference import SqlGenerationPipeline
 from llm_finetune.schemas import GenerationConfig
 
@@ -29,6 +32,15 @@ class TestSqlGenerationPipeline:
         assert pipeline.config is config
 
     @patch("llm_finetune.inference.load_model")
+    def test_init_propagates_checkpoint_not_found(
+        self,
+        mock_load_model: MagicMock,
+    ) -> None:
+        mock_load_model.side_effect = CheckpointNotFoundError("no such dir")
+        with pytest.raises(CheckpointNotFoundError, match="no such dir"):
+            SqlGenerationPipeline(Path("/nonexistent"), GenerationConfig())
+
+    @patch("llm_finetune.inference.load_model")
     def test_call_generates_and_decodes(
         self,
         mock_load_model: MagicMock,
@@ -41,7 +53,7 @@ class TestSqlGenerationPipeline:
         # Tokenizer returns input_ids and attention_mask
         mock_input_ids = MagicMock()
         mock_input_ids.to.return_value = mock_input_ids
-        mock_input_ids.size.return_value = 5
+        mock_input_ids.size = MagicMock(side_effect=lambda dim: 5 if dim == 1 else None)
         mock_attention_mask = MagicMock()
         mock_attention_mask.to.return_value = mock_attention_mask
         mock_tokenizer.return_value = {

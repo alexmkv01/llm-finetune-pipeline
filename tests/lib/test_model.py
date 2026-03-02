@@ -34,6 +34,11 @@ class TestReadBaseModelName:
         with pytest.raises(AdapterConfigError, match="missing"):
             _read_base_model_name(tmp_path)
 
+    def test_raises_on_empty_base_model_name(self, tmp_path: Path) -> None:
+        (tmp_path / "adapter_config.json").write_text('{"base_model_name_or_path": ""}')
+        with pytest.raises(AdapterConfigError, match="missing"):
+            _read_base_model_name(tmp_path)
+
     def test_raises_on_malformed_json(self, tmp_path: Path) -> None:
         (tmp_path / "adapter_config.json").write_text("not json")
         with pytest.raises(AdapterConfigError, match="failed to read"):

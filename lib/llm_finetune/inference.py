@@ -4,7 +4,6 @@ import logging
 from pathlib import Path
 
 import torch
-from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 from llm_finetune.model import load_model
 from llm_finetune.schemas import GenerationConfig
@@ -15,11 +14,12 @@ logger = logging.getLogger(__name__)
 class SqlGenerationPipeline:
     """Pipeline wrapping a causal LM for natural-language-to-SQL generation.
 
-    Loads a model checkpoint (full or LoRA) and exposes a ``__call__``
-    interface for generating SQL from formatted prompt strings.
+    Loads a model checkpoint (full or LoRA) on construction and exposes
+    a ``__call__`` interface for generating SQL from formatted prompt strings.
 
     Args:
-        checkpoint_dir: Path to the model checkpoint directory.
+        checkpoint_dir: Path to the model checkpoint directory. Loaded eagerly
+            on construction — must exist and be readable.
         config: Generation parameters.
     """
 
@@ -29,8 +29,6 @@ class SqlGenerationPipeline:
         config: GenerationConfig,
     ) -> None:
         self.config = config
-        self.model: PreTrainedModel
-        self.tokenizer: PreTrainedTokenizerBase
         self.model, self.tokenizer = load_model(checkpoint_dir)
         logger.info("SqlGenerationPipeline initialised from %s", checkpoint_dir)
 
@@ -52,6 +50,10 @@ class SqlGenerationPipeline:
         input_length = input_ids.size(1)
 
         with torch.no_grad():
+            # torch.nn.Module.__getattr__ stub types attribute access as
+            # Tensor | Module, shadowing the real generate() method signature
+            # and making mypy think we're calling a Tensor. This is a torch
+            # stub limitation, not a real type error.
             output_ids = self.model.generate(  # type: ignore[operator]
                 input_ids=input_ids,
                 attention_mask=attention_mask,
@@ -64,5 +66,8 @@ class SqlGenerationPipeline:
 
         generated_ids = output_ids[0, input_length:]
         decoded = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
-        assert isinstance(decoded, str), "expected single string from decode"
+        if not isinstance(decoded, str):
+            raise RuntimeError(
+                f"tokenizer.decode returned {type(decoded).__name__}, expected str"
+            )
         return decoded.strip()

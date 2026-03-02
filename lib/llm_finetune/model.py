@@ -25,17 +25,11 @@ def _is_lora_checkpoint(checkpoint_dir: Path) -> bool:
 
 
 def _read_base_model_name(checkpoint_dir: Path) -> str:
-    """
-    Read the base model name from a LoRA adapter config.
-
-    Args:
-        checkpoint_dir: Path to the adapter checkpoint directory.
-
-    Returns:
-        The base model name string from the adapter config.
+    """Read the base model name from a LoRA adapter config.
 
     Raises:
-        AdapterConfigError: If the config file is missing or malformed.
+        AdapterConfigError: If the config file is missing, unreadable, or
+            does not contain a non-empty ``base_model_name_or_path``.
     """
     config_path = checkpoint_dir / ADAPTER_CONFIG_FILENAME
     try:
@@ -54,21 +48,14 @@ def _read_base_model_name(checkpoint_dir: Path) -> str:
 
 
 def _load_lora_model(checkpoint_dir: Path) -> PreTrainedModel:
-    """
-    Load a LoRA adapter checkpoint and merge it into the base model.
-
-    Args:
-        checkpoint_dir: Path to the adapter checkpoint directory.
-
-    Returns:
-        The merged model ready for inference.
-    """
+    """Load a LoRA adapter checkpoint and merge it into the base model."""
     base_model_name = _read_base_model_name(checkpoint_dir)
     logger.info(
         "Loading LoRA adapter from %s (base: %s)", checkpoint_dir, base_model_name
     )
 
     base_model = AutoModelForCausalLM.from_pretrained(base_model_name)
+    # str() cast: transformers from_pretrained does not accept Path objects
     peft_model = PeftModel.from_pretrained(base_model, str(checkpoint_dir))
     merged: PreTrainedModel = peft_model.merge_and_unload()
     logger.info("LoRA adapter merged successfully")
@@ -76,16 +63,9 @@ def _load_lora_model(checkpoint_dir: Path) -> PreTrainedModel:
 
 
 def _load_full_model(checkpoint_dir: Path) -> PreTrainedModel:
-    """
-    Load a full (non-adapter) model checkpoint.
-
-    Args:
-        checkpoint_dir: Path to the model checkpoint directory.
-
-    Returns:
-        The loaded model ready for inference.
-    """
+    """Load a full (non-adapter) model checkpoint."""
     logger.info("Loading full model from %s", checkpoint_dir)
+    # str() cast: transformers from_pretrained does not accept Path objects
     model: PreTrainedModel = AutoModelForCausalLM.from_pretrained(
         str(checkpoint_dir),
     )
@@ -95,18 +75,10 @@ def _load_full_model(checkpoint_dir: Path) -> PreTrainedModel:
 def load_model(
     checkpoint_dir: Path,
 ) -> tuple[PreTrainedModel, PreTrainedTokenizerBase]:
-    """
-    Load a model and tokenizer from a local HuggingFace checkpoint.
+    """Load a model and tokenizer from a local HuggingFace checkpoint.
 
-    Transparently handles both full checkpoints and LoRA adapter
-    checkpoints. LoRA adapters are merged into the base model before
-    returning.
-
-    Args:
-        checkpoint_dir: Path to the checkpoint directory.
-
-    Returns:
-        Tuple of (model, tokenizer) ready for inference.
+    Transparently handles both full checkpoints and LoRA adapter checkpoints.
+    LoRA adapters are merged into the base model before returning.
 
     Raises:
         CheckpointNotFoundError: If the checkpoint directory does not exist.
@@ -122,6 +94,7 @@ def load_model(
     else:
         model = _load_full_model(checkpoint_dir)
 
+    # str() cast: transformers from_pretrained does not accept Path objects
     tokenizer: PreTrainedTokenizerBase = AutoTokenizer.from_pretrained(
         str(checkpoint_dir),
     )
